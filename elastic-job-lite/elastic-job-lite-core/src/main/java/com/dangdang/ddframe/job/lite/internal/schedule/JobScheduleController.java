@@ -17,8 +17,6 @@
 
 package com.dangdang.ddframe.job.lite.internal.schedule;
 
-import com.dangdang.ddframe.job.exception.JobSystemException;
-import lombok.RequiredArgsConstructor;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
 import org.quartz.JobDetail;
@@ -27,6 +25,10 @@ import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
+
+import com.dangdang.ddframe.job.exception.JobSystemException;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * 作业调度控制器.
@@ -53,6 +55,26 @@ public final class JobScheduleController {
                 scheduler.scheduleJob(jobDetail, createTrigger(cron));
             }
             scheduler.start();
+        } catch (final SchedulerException ex) {
+            throw new JobSystemException(ex);
+        }
+    }
+    
+    public void scheduleJob(final Trigger trigger) {
+    	 try {
+             if (!scheduler.checkExists(jobDetail.getKey())) {
+                 scheduler.scheduleJob(jobDetail, trigger);
+             }
+         } catch (final SchedulerException ex) {
+             throw new JobSystemException(ex);
+         }
+    }
+    
+    public synchronized void rescheduleJob(final Trigger trigger) {
+        try {
+            if (!scheduler.isShutdown() && null != trigger ) {
+                scheduler.rescheduleJob(TriggerKey.triggerKey(triggerIdentity), trigger);
+            }
         } catch (final SchedulerException ex) {
             throw new JobSystemException(ex);
         }
